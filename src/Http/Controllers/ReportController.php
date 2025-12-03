@@ -12,8 +12,9 @@ use Illuminate\Http\Response;
  */
 class ReportController
 {
-    public function preRegistrationReport(Request $request, LegacyInstitution $institution)
+    public function preRegistrationReport(Request $request)
     {
+        $institution = LegacyInstitution::query()->where('ativo', 1)->firstOrFail();
         $report = new PreRegistrationReport;
 
         $report->addArg('instituicao', $institution->getKey());
