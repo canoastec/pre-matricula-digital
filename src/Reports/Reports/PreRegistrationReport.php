@@ -57,7 +57,6 @@ class PreRegistrationReport extends Portabilis_Report_ReportCore
         return [
             'orientation' => 'portrait',
             'main' => (new $query($this->args))->get(),
-            'driver' => 'chrome',
         ];
     }
 
