@@ -60,16 +60,25 @@ export default defineComponent({
     const search = async () => {
       loading.value = true;
       axios
-        .get(`https://viacep.com.br/ws/${onlyNumbers.value}/json/`)
+        .get(`https://opencep.com/v1/${onlyNumbers.value}`)
         .then((res) => {
-          if (res.data.erro) {
-            searchFromGoogle();
+          const data = res.data;
+          if (data?.localidade) {
+            emit('change:address', {
+              cep: data.cep,
+              logradouro: data.logradouro ?? '',
+              complemento: data.complemento ?? '',
+              bairro: data.bairro ?? '',
+              localidade: data.localidade,
+              uf: data.uf,
+              ibge: data.ibge ?? '',
+            });
           } else {
-            emit('change:address', res.data);
+            searchFromGoogle();
           }
         })
         .catch(() => {
-          emit('notFound');
+          searchFromGoogle();
         })
         .finally(() => {
           loading.value = false;
