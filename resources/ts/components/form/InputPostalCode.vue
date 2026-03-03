@@ -59,54 +59,30 @@ export default defineComponent({
 
     const search = async () => {
       loading.value = true;
-      try {
-        try {
-          const viaCepRes = await axios.get(
-          `https://viacep.com.br/ws/${onlyNumbers.value}/json/`
-        );
-        if (!viaCepRes.data.erro) {
-          emit('change:address', viaCepRes.data);
-          return;
-        }
-      } catch {
-      }
-
-      try {
-        const openCepRes = await axios.get(
-          `https://opencep.com/v1/${onlyNumbers.value}`
-        );
-        const data = openCepRes.data;
-        if (data?.localidade) {
-          emit('change:address', data);
-          return;
-        }
-      } catch {
-      }
-
-      try {
-        const awesomeRes = await axios.get(
-          `https://cep.awesomeapi.com.br/json/${onlyNumbers.value}`
-        );
-        const data = awesomeRes.data;
-        if (data?.city) {
-          emit('change:address', {
-            cep: data.cep,
-            logradouro: data.address ?? '',
-            complemento: '',
-            bairro: data.district ?? '',
-            localidade: data.city,
-            uf: data.state,
-            ibge: data.city_ibge ?? '',
-          });
-          return;
-        }
-      } catch {
-      }
-
-      searchFromGoogle();
-    } finally {
-      loading.value = false;
-    }
+      axios
+        .get(`https://opencep.com/v1/${onlyNumbers.value}`)
+        .then((res) => {
+          const data = res.data;
+          if (data?.localidade) {
+            emit('change:address', {
+              cep: data.cep,
+              logradouro: data.logradouro ?? '',
+              complemento: data.complemento ?? '',
+              bairro: data.bairro ?? '',
+              localidade: data.localidade,
+              uf: data.uf,
+              ibge: data.ibge ?? '',
+            });
+          } else {
+            searchFromGoogle();
+          }
+        })
+        .catch(() => {
+          searchFromGoogle();
+        })
+        .finally(() => {
+          loading.value = false;
+        });
     };
 
     const searchFromGoogle = () => {
