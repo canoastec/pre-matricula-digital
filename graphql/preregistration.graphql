@@ -219,6 +219,7 @@ type PreRegistration {
   id: ID!
   type: PreRegistrationType! @rename(attribute: "preregistration_type_id")
   position: Int!
+  priority: Int
   parent: PreRegistration @belongsTo
   waiting: PreRegistration @belongsTo
   others: [PreRegistration]

@@ -23,6 +23,34 @@ class PreRegistrationBuilder extends Builder
         $query->join('preregistration_position', 'preregistrations.id', '=', 'preregistration_position.preregistration_id');
 
         parent::__construct($query);
+
+        $this->orderByPriorityByMonth();
+    }
+
+    /**
+     * Ordena por mês (mais recente), pontuação e data de criação.
+     */
+    public function orderByPriorityByMonth(): static
+    {
+        return $this
+            ->orderByRaw("DATE_TRUNC('month', preregistrations.created_at) DESC")
+            ->orderByDesc('preregistrations.priority')
+            ->orderByDesc('preregistrations.created_at')
+            ->orderByDesc('preregistrations.id');
+    }
+
+    public function sort(int $type): static
+    {
+        $this->reorder();
+
+        return match ($type) {
+            self::DATE => $this->orderBy('created_at'),
+            self::POSITION => $this->orderBy('position'),
+            self::SCHOOL => $this->orderBySchoolName(),
+            self::NAME => $this->orderByStudentName(),
+            self::DATE_OF_BIRTH => $this->orderByStudentDateOfBirth(),
+            default => $this->orderByPriorityByMonth(),
+        };
     }
 
     /**
@@ -99,18 +127,6 @@ class PreRegistrationBuilder extends Builder
             // TODO remover uso da função `unaccent`
             $query->orderByRaw($order);
         });
-    }
-
-    public function sort(int $type): static
-    {
-        return match ($type) {
-            self::DATE => $this->orderBy('created_at'),
-            self::POSITION => $this->orderBy('position'),
-            self::SCHOOL => $this->orderBySchoolName(),
-            self::NAME => $this->orderByStudentName(),
-            self::DATE_OF_BIRTH => $this->orderByStudentDateOfBirth(),
-            default => $this,
-        };
     }
 
     public function match(array $data): static

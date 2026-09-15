@@ -84,6 +84,8 @@ export interface PreRegistrationList {
   type: string;
   protocol: string;
   status: string;
+  priority?: number;
+  date?: string;
   student: {
     name: string;
     initials: string;
