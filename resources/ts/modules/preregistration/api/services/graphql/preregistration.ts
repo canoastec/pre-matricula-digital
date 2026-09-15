@@ -504,6 +504,8 @@ export const getList = (data: Filter): Promise<PreregistrationLoad> => {
             type
             protocol
             status
+            priority
+            date
             student {
               name
               initials

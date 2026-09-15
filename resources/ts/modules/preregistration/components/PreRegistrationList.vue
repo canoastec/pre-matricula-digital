@@ -89,6 +89,17 @@
                 @click="showModalReportOptions = true"
               />
               <x-btn
+                label="Importar SIEC"
+                color="white"
+                outline
+                class="ml-2"
+                no-caps
+                no-wrap
+                icon="mdi-file-upload-outline"
+                loading-normal
+                @click="openSiecImportModal"
+              />
+              <x-btn
                 v-if="
                   filter.processes?.length === 1 &&
                   filter.school &&
@@ -223,6 +234,7 @@
           <th>Protocolo</th>
           <th>Nome do(a) aluno(a)</th>
           <th>Escola</th>
+          <th>Pontuação</th>
           <th>Posição</th>
           <th>Série</th>
           <th>Turno</th>
@@ -231,99 +243,112 @@
       </thead>
       <tbody>
         <tr v-if="noData">
-          <td colspan="9">Nenhum resultado.</td>
+          <td colspan="10">Nenhum resultado.</td>
         </tr>
-        <tr
-          v-for="preregistration in preregistrations"
-          v-else
-          :key="preregistration.id"
-        >
-          <td class="w-1">
-            <div class="custom-control custom-checkbox">
-              <input
-                :id="`checkbox-${preregistration.id}`"
-                v-model="checked"
-                :value="preregistration.id"
-                type="checkbox"
-                class="custom-control-input"
-                @change="checkOne"
-              />
-              <label
-                :for="`checkbox-${preregistration.id}`"
-                class="custom-control-label"
-              >
-                <span class="d-none">Marcar pré-matrícula</span>
-              </label>
-            </div>
-          </td>
-          <td>
-            <span
-              v-tooltip.bottom-start="
-                preRegistrationStatusText(preregistration.status)
-              "
-              :class="preRegistrationStatusClass(preregistration.status)"
-            ></span>
-          </td>
-          <td>
-            <a
-              data-test="protocol"
-              href="javascript:void(0)"
-              @click="showPreRegistration(preregistration.protocol)"
-            >
-              #{{ preregistration.protocol }}
-            </a>
-          </td>
-          <td>
-            {{ preregistration.student.name }}
-          </td>
-          <td>
-            {{ preregistration.school.name }}
-            <div v-if="preregistration.waiting">
-              <small class="align-top">
-                {{ preregistration.waiting.school.name }}
-              </small>
-              <span
-                :class="
-                  preRegistrationStatusClass(preregistration.waiting.status)
-                "
-              ></span>
-            </div>
-            <div v-if="preregistration.parent">
-              <small class="align-top">
-                {{ preregistration.parent.school.name }}
-              </small>
-              <span
-                :class="
-                  preRegistrationStatusClass(preregistration.parent.status)
-                "
-              ></span>
-            </div>
-          </td>
-          <td>
-            {{ preregistration.position }}º
-            <div v-if="preregistration.waiting">
-              <small class="align-top">
-                {{ preregistration.waiting.position }}º
-              </small>
-            </div>
-            <div v-if="preregistration.parent">
-              <small class="align-top">
-                {{ preregistration.parent.position }}º
-              </small>
-            </div>
-          </td>
-          <td>
-            {{ preregistration.grade ? preregistration.grade.name : '-' }}
-          </td>
-          <td>
-            {{ preregistration.period ? preregistration.period.name : '-' }}
-          </td>
-          <td>
-            <span :class="badgeType(preregistration.type)" class="badge">
-              {{ getType(preregistration.type) }}
-            </span>
-          </td>
-        </tr>
+        <template v-else>
+          <template
+            v-for="row in preregistrationRows"
+            :key="row.key"
+          >
+            <tr v-if="row.type === 'month'" class="table-month-group">
+              <td colspan="10" class="font-weight-bold text-uppercase">
+                {{ row.label }}
+              </td>
+            </tr>
+            <tr v-else>
+              <td class="w-1">
+                <div class="custom-control custom-checkbox">
+                  <input
+                    :id="`checkbox-${row.item.id}`"
+                    v-model="checked"
+                    :value="row.item.id"
+                    type="checkbox"
+                    class="custom-control-input"
+                    @change="checkOne"
+                  />
+                  <label
+                    :for="`checkbox-${row.item.id}`"
+                    class="custom-control-label"
+                  >
+                    <span class="d-none">Marcar pré-matrícula</span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <span
+                  v-tooltip.bottom-start="
+                    preRegistrationStatusText(row.item.status)
+                  "
+                  :class="preRegistrationStatusClass(row.item.status)"
+                ></span>
+              </td>
+              <td>
+                <a
+                  data-test="protocol"
+                  href="javascript:void(0)"
+                  @click="showPreRegistration(row.item.protocol)"
+                >
+                  #{{ row.item.protocol }}
+                </a>
+              </td>
+              <td>
+                {{ row.item.student.name }}
+              </td>
+              <td>
+                {{ row.item.school.name }}
+                <div v-if="row.item.waiting">
+                  <small class="align-top">
+                    {{ row.item.waiting.school.name }}
+                  </small>
+                  <span
+                    :class="
+                      preRegistrationStatusClass(row.item.waiting.status)
+                    "
+                  ></span>
+                </div>
+                <div v-if="row.item.parent">
+                  <small class="align-top">
+                    {{ row.item.parent.school.name }}
+                  </small>
+                  <span
+                    :class="
+                      preRegistrationStatusClass(row.item.parent.status)
+                    "
+                  ></span>
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-secondary">
+                  {{ row.item.priority || 0 }} PTS
+                </span>
+              </td>
+              <td>
+                {{ row.item.position }}º
+                <div v-if="row.item.waiting">
+                  <small class="align-top">
+                    {{ row.item.waiting.position }}º
+                  </small>
+                </div>
+                <div v-if="row.item.parent">
+                  <small class="align-top">
+                    {{ row.item.parent.position }}º
+                  </small>
+                </div>
+              </td>
+              <td>
+                {{ row.item.grade ? row.item.grade.name : '-' }}
+              </td>
+              <td>
+                {{ row.item.period ? row.item.period.name : '-' }}
+              </td>
+              <td>
+                <span :class="badgeType(row.item.type)" class="badge">
+                  {{ getType(row.item.type) }}
+                </span>
+              </td>
+            </tr>
+          </template>
+        </template>
       </tbody>
     </table>
     <pagination :paginator-info="paginator" @page="load($event as number)" />
@@ -413,6 +438,77 @@
               no-caps
               no-wrap
               @click="toReport"
+            />
+          </div>
+        </div>
+      </template>
+    </modal-component>
+
+    <modal-component
+      v-model="showModalSiecImport"
+      no-footer
+      title="Importar SIEC"
+      is-overflow-visible
+    >
+      <template #body>
+        <div class="row">
+          <x-field
+            v-model="siecImport.processId"
+            container-class="col-12 mb-3"
+            name="siecProcess"
+            label="Processo"
+            type="SELECT"
+            :options="siecProcessOptions"
+            searchable
+          />
+          <x-field
+            v-model="siecImport.schoolId"
+            container-class="col-12 mb-3"
+            name="siecSchool"
+            label="Escola"
+            type="SELECT"
+            :options="siecSchoolOptions"
+            searchable
+          />
+          <x-field
+            v-model="siecImport.gradeId"
+            container-class="col-12 mb-3"
+            name="siecGrade"
+            label="Série"
+            type="SELECT"
+            :options="siecGradeOptions"
+            searchable
+          />
+          <div class="col-12 mb-3">
+            <label class="form-label" for="siec-file">Arquivo CSV</label>
+            <input
+              id="siec-file"
+              type="file"
+              class="form-control"
+              accept=".csv,text/csv"
+              @change="onSiecFileChange"
+            />
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="row">
+          <div class="col-12">
+            <x-btn
+              data-test="toSiecImport"
+              :loading="loadingSiecImport"
+              :disable="
+                !siecImport.processId ||
+                !siecImport.schoolId ||
+                !siecImport.gradeId ||
+                !siecImport.file
+              "
+              color="primary"
+              class="w-100"
+              label="Importar"
+              no-caps
+              no-wrap
+              @click="importSiec"
             />
           </div>
         </div>
@@ -555,11 +651,45 @@ const limitTableRowsOptions = ref<Option[]>([
 ]);
 const loadingTable = ref(true);
 const showModalReportOptions = ref(false);
+const showModalSiecImport = ref(false);
+const loadingSiecImport = ref(false);
+const siecImport = ref<{
+  processId: Nullable<string>;
+  schoolId: Nullable<string>;
+  gradeId: Nullable<string>;
+  file: File | null;
+}>({
+  processId: null,
+  schoolId: null,
+  gradeId: null,
+  file: null,
+});
 
 const reportOptions = ref<ReportOptions>({
   template: 1,
   showStudentShortName: true,
   disregardStudentsIeducar: false,
+});
+
+const siecProcessOptions = computed(() => {
+  return processes.value.map((process) => ({
+    key: process.id ?? process.key,
+    label: process.name ?? process.label,
+  }));
+});
+
+const siecSchoolOptions = computed(() => {
+  return schools.value.map((school) => ({
+    key: school.id ?? school.key,
+    label: school.name ?? school.label,
+  }));
+});
+
+const siecGradeOptions = computed(() => {
+  return grades.value.map((grade) => ({
+    key: grade.id ?? grade.key,
+    label: grade.name ?? grade.label,
+  }));
 });
 
 const rejectDisabled = computed(() => {
@@ -641,6 +771,86 @@ const getStatuses = computed(() => {
 
 const noData = computed(() => {
   return loadingTable.value === false && preregistrations.value.length === 0;
+});
+
+const monthLabels = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
+const formatMonthGroup = (dateValue?: string) => {
+  const key = monthKey(dateValue);
+
+  if (key === 'unknown') {
+    return 'Sem data';
+  }
+
+  const [year, month] = key.split('-');
+
+  return `${monthLabels[Number(month) - 1]} ${year}`;
+};
+
+const monthKey = (dateValue?: string) => {
+  if (!dateValue) {
+    return 'unknown';
+  }
+
+  const match = String(dateValue).match(/^(\d{4})-(\d{2})/);
+
+  if (match) {
+    return `${match[1]}-${match[2]}`;
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'unknown';
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
+type PreregistrationRow =
+  | { type: 'month'; key: string; label: string }
+  | { type: 'item'; key: string; item: PreRegistrationList };
+
+const preregistrationRows = computed((): PreregistrationRow[] => {
+  const rows: PreregistrationRow[] = [];
+  let lastMonth: string | null = null;
+  const groupByMonth = !filter.value.sort;
+
+  preregistrations.value.forEach((item) => {
+    if (groupByMonth) {
+      const currentMonth = monthKey(item.date);
+
+      if (currentMonth !== lastMonth) {
+        rows.push({
+          type: 'month',
+          key: `month-${currentMonth}`,
+          label: formatMonthGroup(item.date),
+        });
+        lastMonth = currentMonth;
+      }
+    }
+
+    rows.push({
+      type: 'item',
+      key: `item-${item.id}`,
+      item,
+    });
+  });
+
+  return rows;
 });
 
 const toExport = () => {
@@ -797,6 +1007,68 @@ const toReport = () => {
     });
 };
 
+const openSiecImportModal = () => {
+  siecImport.value.file = null;
+  siecImport.value.processId =
+    filter.value.processes?.length === 1
+      ? (filter.value.processes[0] as string)
+      : null;
+  siecImport.value.schoolId = (filter.value.school as string) || null;
+  siecImport.value.gradeId =
+    filter.value.grades?.length === 1
+      ? (filter.value.grades[0] as string)
+      : ((filter.value.grade as string) || null);
+  showModalSiecImport.value = true;
+};
+
+const onSiecFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  siecImport.value.file = target.files?.[0] ?? null;
+};
+
+const importSiec = async () => {
+  if (
+    !siecImport.value.processId ||
+    !siecImport.value.schoolId ||
+    !siecImport.value.gradeId ||
+    !siecImport.value.file
+  ) {
+    return;
+  }
+
+  loadingSiecImport.value = true;
+
+  try {
+    const res = await PreregistrationRest.toSiecImport(
+      siecImport.value.file,
+      siecImport.value.processId,
+      siecImport.value.schoolId,
+      siecImport.value.gradeId
+    );
+
+    showModalSiecImport.value = false;
+    dialog({
+      title: 'Sucesso!',
+      description: `${res.imported} novas inscrições importadas com sucesso do SIEC!`,
+      titleClass: 'success',
+      iconLeft: 'status-green',
+    });
+    load(1);
+  } catch (error: unknown) {
+    const message =
+      (error as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message || 'Não foi possível importar o arquivo SIEC.';
+    dialog({
+      title: 'Atenção!',
+      description: message,
+      titleClass: 'danger',
+      iconLeft: 'status-red',
+    });
+  } finally {
+    loadingSiecImport.value = false;
+  }
+};
+
 const getType = (type: string) => {
   switch (type) {
     case 'REGISTRATION':
@@ -928,3 +1200,12 @@ const ctx = {
   toExport,
 };
 </script>
+
+<style scoped>
+.table-month-group td {
+  background-color: #e9ecef;
+  border-top: 2px solid #ced4da;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+</style>
