@@ -11,7 +11,6 @@ use iEducar\Packages\PreMatricula\Http\Controllers\AuthController;
 use iEducar\Packages\PreMatricula\Http\Controllers\ConfigController;
 use iEducar\Packages\PreMatricula\Http\Controllers\ExportController;
 use iEducar\Packages\PreMatricula\Http\Controllers\ReportController;
-use iEducar\Packages\PreMatricula\Http\Controllers\SiecImportController;
 use iEducar\Packages\PreMatricula\Listeners\PreRegistrationTransferNotificationListener;
 use Illuminate\Auth\GenericUser;
 use Illuminate\Console\Scheduling\Schedule;
@@ -57,7 +56,6 @@ class PreMatriculaServiceProvider extends LaravelServiceProvider
 
             Route::get('pre-matricula-export', ExportController::class . '@export');
             Route::get('pre-matricula-report', ReportController::class . '@preRegistrationReport');
-            Route::post('pre-matricula-siec-import', SiecImportController::class . '@import');
         });
 
         if ($this->app->runningInConsole()) {

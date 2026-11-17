@@ -89,17 +89,6 @@
                 @click="showModalReportOptions = true"
               />
               <x-btn
-                label="Importar SIEC"
-                color="white"
-                outline
-                class="ml-2"
-                no-caps
-                no-wrap
-                icon="mdi-file-upload-outline"
-                loading-normal
-                @click="openSiecImportModal"
-              />
-              <x-btn
                 v-if="
                   filter.processes?.length === 1 &&
                   filter.school &&
@@ -444,77 +433,6 @@
       </template>
     </modal-component>
 
-    <modal-component
-      v-model="showModalSiecImport"
-      no-footer
-      title="Importar SIEC"
-      is-overflow-visible
-    >
-      <template #body>
-        <div class="row">
-          <x-field
-            v-model="siecImport.processId"
-            container-class="col-12 mb-3"
-            name="siecProcess"
-            label="Processo"
-            type="SELECT"
-            :options="siecProcessOptions"
-            searchable
-          />
-          <x-field
-            v-model="siecImport.schoolId"
-            container-class="col-12 mb-3"
-            name="siecSchool"
-            label="Escola"
-            type="SELECT"
-            :options="siecSchoolOptions"
-            searchable
-          />
-          <x-field
-            v-model="siecImport.gradeId"
-            container-class="col-12 mb-3"
-            name="siecGrade"
-            label="Série"
-            type="SELECT"
-            :options="siecGradeOptions"
-            searchable
-          />
-          <div class="col-12 mb-3">
-            <label class="form-label" for="siec-file">Arquivo CSV</label>
-            <input
-              id="siec-file"
-              type="file"
-              class="form-control"
-              accept=".csv,text/csv"
-              @change="onSiecFileChange"
-            />
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="row">
-          <div class="col-12">
-            <x-btn
-              data-test="toSiecImport"
-              :loading="loadingSiecImport"
-              :disable="
-                !siecImport.processId ||
-                !siecImport.schoolId ||
-                !siecImport.gradeId ||
-                !siecImport.file
-              "
-              color="primary"
-              class="w-100"
-              label="Importar"
-              no-caps
-              no-wrap
-              @click="importSiec"
-            />
-          </div>
-        </div>
-      </template>
-    </modal-component>
-
     <router-view v-slot="{ Component }">
       <component :is="Component" :key="route.path" />
     </router-view>
@@ -651,45 +569,11 @@ const limitTableRowsOptions = ref<Option[]>([
 ]);
 const loadingTable = ref(true);
 const showModalReportOptions = ref(false);
-const showModalSiecImport = ref(false);
-const loadingSiecImport = ref(false);
-const siecImport = ref<{
-  processId: Nullable<string>;
-  schoolId: Nullable<string>;
-  gradeId: Nullable<string>;
-  file: File | null;
-}>({
-  processId: null,
-  schoolId: null,
-  gradeId: null,
-  file: null,
-});
 
 const reportOptions = ref<ReportOptions>({
   template: 1,
   showStudentShortName: true,
   disregardStudentsIeducar: false,
-});
-
-const siecProcessOptions = computed(() => {
-  return processes.value.map((process) => ({
-    key: process.id ?? process.key,
-    label: process.name ?? process.label,
-  }));
-});
-
-const siecSchoolOptions = computed(() => {
-  return schools.value.map((school) => ({
-    key: school.id ?? school.key,
-    label: school.name ?? school.label,
-  }));
-});
-
-const siecGradeOptions = computed(() => {
-  return grades.value.map((grade) => ({
-    key: grade.id ?? grade.key,
-    label: grade.name ?? grade.label,
-  }));
 });
 
 const rejectDisabled = computed(() => {
@@ -1005,68 +889,6 @@ const toReport = () => {
     .finally(() => {
       showModalReportOptions.value = false;
     });
-};
-
-const openSiecImportModal = () => {
-  siecImport.value.file = null;
-  siecImport.value.processId =
-    filter.value.processes?.length === 1
-      ? (filter.value.processes[0] as string)
-      : null;
-  siecImport.value.schoolId = (filter.value.school as string) || null;
-  siecImport.value.gradeId =
-    filter.value.grades?.length === 1
-      ? (filter.value.grades[0] as string)
-      : ((filter.value.grade as string) || null);
-  showModalSiecImport.value = true;
-};
-
-const onSiecFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  siecImport.value.file = target.files?.[0] ?? null;
-};
-
-const importSiec = async () => {
-  if (
-    !siecImport.value.processId ||
-    !siecImport.value.schoolId ||
-    !siecImport.value.gradeId ||
-    !siecImport.value.file
-  ) {
-    return;
-  }
-
-  loadingSiecImport.value = true;
-
-  try {
-    const res = await PreregistrationRest.toSiecImport(
-      siecImport.value.file,
-      siecImport.value.processId,
-      siecImport.value.schoolId,
-      siecImport.value.gradeId
-    );
-
-    showModalSiecImport.value = false;
-    dialog({
-      title: 'Sucesso!',
-      description: `${res.imported} novas inscrições importadas com sucesso do SIEC!`,
-      titleClass: 'success',
-      iconLeft: 'status-green',
-    });
-    load(1);
-  } catch (error: unknown) {
-    const message =
-      (error as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message || 'Não foi possível importar o arquivo SIEC.';
-    dialog({
-      title: 'Atenção!',
-      description: message,
-      titleClass: 'danger',
-      iconLeft: 'status-red',
-    });
-  } finally {
-    loadingSiecImport.value = false;
-  }
 };
 
 const getType = (type: string) => {
